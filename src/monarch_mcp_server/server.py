@@ -162,15 +162,20 @@ def get_accounts() -> str:
         # Format accounts for display
         account_list = []
         for account in accounts.get("accounts", []):
+            type_info = account.get("type", {})
+            type_name = type_info.get("name") if isinstance(type_info, dict) else None
+
+            institution_info = account.get("institution", {})
+            institution_name = institution_info.get("name") if isinstance(institution_info, dict) else None
+
             account_info = {
                 "id": account.get("id"),
                 "name": account.get("displayName") or account.get("name"),
-                "type": (account.get("type") or {}).get("name"),
+                "type": type_name,
                 "balance": account.get("currentBalance"),
-                "institution": (account.get("institution") or {}).get("name"),
-                "is_active": account.get("isActive")
-                if "isActive" in account
-                else not account.get("deactivatedAt"),
+                "institution": institution_name,
+                "is_active": not account.get("deactivatedAt"),
+                "is_hidden": account.get("isHidden", False)
             }
             account_list.append(account_info)
 
