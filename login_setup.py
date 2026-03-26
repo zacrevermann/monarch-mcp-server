@@ -18,6 +18,10 @@ src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
 from monarchmoney import MonarchMoney, RequireMFAException
+from monarchmoney.monarchmoney import MonarchMoneyEndpoints
+
+# The monarchmoney library hardcodes the old API domain. Patch it to the current one.
+MonarchMoneyEndpoints.BASE_URL = "https://api.monarch.com"
 from dotenv import load_dotenv
 from monarch_mcp_server.secure_session import secure_session
 
@@ -64,22 +68,44 @@ async def main():
                 return
         
         print("\nStarting login...")
-        email = input("Email: ")
-        password = getpass.getpass("Password: ")
-        
-        # Try login without MFA first
-        try:
-            await mm.login(email, password, use_saved_session=False, save_session=True)
-            print("✅ Login successful!")
-                
-        except RequireMFAException:
-            print("🔐 MFA code required")
-            mfa_code = input("Two Factor Code: ")
-            
-            # Use the same instance for MFA
-            await mm.multi_factor_authenticate(email, password, mfa_code)
-            print("✅ MFA authentication successful")
-            mm.save_session()  # Manually save the session
+        print("\nHow do you sign in to Monarch Money?")
+        print("  1) Email and password")
+        print("  2) Google / SSO (single sign-on)")
+        login_method = input("Choice (1 or 2): ").strip()
+
+        if login_method == "2":
+            print("\n📋 To get your session token from the browser:")
+            print("  1. Log in to https://app.monarchmoney.com in Chrome/Firefox")
+            print("  2. Open DevTools (F12) → Application tab → Local Storage")
+            print("     → https://app.monarchmoney.com")
+            print("  3. Copy the value for the key 'token'")
+            print("     (Alternatively: DevTools → Network tab, filter any request,")
+            print("      look for 'Authorization: Token <value>' in request headers)")
+            token = getpass.getpass("\nPaste your session token: ").strip()
+            if not token:
+                print("❌ No token provided. Exiting.")
+                return
+            # Re-initialize with the token so the Authorization header is set correctly.
+            # set_token() only stores the value but does not update _headers.
+            mm = MonarchMoney(token=token)
+            print("✅ Token set")
+        else:
+            email = input("Email: ")
+            password = getpass.getpass("Password: ")
+
+            # Try login without MFA first
+            try:
+                await mm.login(email, password, use_saved_session=False, save_session=True)
+                print("✅ Login successful!")
+
+            except RequireMFAException:
+                print("🔐 MFA code required")
+                mfa_code = input("Two Factor Code: ")
+
+                # Use the same instance for MFA
+                await mm.multi_factor_authenticate(email, password, mfa_code)
+                print("✅ MFA authentication successful")
+                mm.save_session()  # Manually save the session
         
         # Test the connection first
         print("\nTesting connection...")
