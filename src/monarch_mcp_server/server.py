@@ -247,31 +247,25 @@ def get_transactions(
 
 
 @mcp.tool()
-def get_budgets() -> str:
-    """Get budget information from Monarch Money."""
+def get_budgets(
+    start_date: Optional[str] = None, end_date: Optional[str] = None
+) -> str:
+    """Get budget information from Monarch Money.
+
+    Args:
+        start_date: Optional start date in YYYY-MM-DD format.
+        end_date: Optional end date in YYYY-MM-DD format.
+    """
     try:
 
         async def _get_budgets() -> Any:
             client = await get_monarch_client()
-            return await client.get_budgets()
+            return await client.get_budgets(
+                start_date=start_date, end_date=end_date
+            )
 
         budgets = run_async(_get_budgets())
-
-        # Format budgets for display
-        budget_list = []
-        for budget in budgets.get("budgets", []):
-            budget_info = {
-                "id": budget.get("id"),
-                "name": budget.get("name"),
-                "amount": budget.get("amount"),
-                "spent": budget.get("spent"),
-                "remaining": budget.get("remaining"),
-                "category": budget.get("category", {}).get("name"),
-                "period": budget.get("period"),
-            }
-            budget_list.append(budget_info)
-
-        return json.dumps(budget_list, indent=2, default=str)
+        return json.dumps(budgets, indent=2, default=str)
     except Exception as e:
         logger.error(f"Failed to get budgets: {e}")
         return f"Error getting budgets: {str(e)}"
