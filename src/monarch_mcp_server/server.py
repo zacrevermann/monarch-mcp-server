@@ -459,7 +459,9 @@ def main() -> None:
     port = int(os.getenv("PORT", "8000"))
     try:
         if transport in ("sse", "streamable-http"):
-            logger.info(f"Running with {transport} transport on port {port}")
+            mcp.settings.host = "0.0.0.0"
+            mcp.settings.port = port
+            logger.info(f"Running with {transport} transport on 0.0.0.0:{port}")
             mcp.run(transport=transport)
         else:
             mcp.run()
