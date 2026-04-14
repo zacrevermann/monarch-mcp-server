@@ -455,8 +455,14 @@ def refresh_accounts() -> str:
 def main() -> None:
     """Main entry point for the server."""
     logger.info("Starting Monarch Money MCP Server...")
+    transport = os.getenv("MCP_TRANSPORT", "stdio")
+    port = int(os.getenv("PORT", "8000"))
     try:
-        mcp.run()
+        if transport in ("sse", "streamable-http"):
+            logger.info(f"Running with {transport} transport on port {port}")
+            mcp.run(transport=transport, host="0.0.0.0", port=port)  # type: ignore[call-arg]
+        else:
+            mcp.run()
     except Exception as e:
         logger.error(f"Failed to run server: {str(e)}")
         raise
