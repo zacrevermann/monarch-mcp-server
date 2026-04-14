@@ -460,7 +460,7 @@ def main() -> None:
     try:
         if transport in ("sse", "streamable-http"):
             logger.info(f"Running with {transport} transport on port {port}")
-            mcp.run(transport=transport, host="0.0.0.0", port=port)  # type: ignore[call-arg]
+            mcp.run(transport=transport)
         else:
             mcp.run()
     except Exception as e:
