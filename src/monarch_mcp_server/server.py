@@ -21,8 +21,11 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Initialize FastMCP server
-mcp = FastMCP("Monarch Money MCP Server")
+# Initialize FastMCP server — use 0.0.0.0 for cloud transports so DNS
+# rebinding protection doesn't block requests from external hosts.
+_transport = os.getenv("MCP_TRANSPORT", "stdio")
+_host = "0.0.0.0" if _transport in ("sse", "streamable-http") else "127.0.0.1"
+mcp = FastMCP("Monarch Money MCP Server", host=_host)
 
 
 def run_async(coro: Any) -> Any:
@@ -459,7 +462,6 @@ def main() -> None:
     port = int(os.getenv("PORT", "8000"))
     try:
         if transport in ("sse", "streamable-http"):
-            mcp.settings.host = "0.0.0.0"
             mcp.settings.port = port
             logger.info(f"Running with {transport} transport on 0.0.0.0:{port}")
             mcp.run(transport=transport)
